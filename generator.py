@@ -7,16 +7,20 @@ def load_wordlist(path):
         return []
 
 
-def generate_subdomains(domain, words):
+def generate_subdomains(domain, words, max_permutations=10000):
     subdomains = set()
     # Single word
     for word in words:
         subdomains.add(f"{word}.{domain}")
-    # Two-word permutations
+    count = 0
+    # Two-word permutations (limited)
     for w1 in words:
         for w2 in words:
             if w1 != w2:
                 subdomains.add(f"{w1}-{w2}.{domain}")
+                count += 1
+                if count >= max_permutations:
+                    return list(subdomains)
     return list(subdomains)
 
 
