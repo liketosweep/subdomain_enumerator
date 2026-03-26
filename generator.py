@@ -8,12 +8,19 @@ def load_wordlist(path):
 
 
 def generate_subdomains(domain, words):
-    subdomains = []
-    
+    subdomains = set()
+
+    # Single word
     for word in words:
-        subdomains.append(f"{word}.{domain}")
-    
-    return subdomains
+        subdomains.add(f"{word}.{domain}")
+
+    # Two-word permutations
+    for w1 in words:
+        for w2 in words:
+            if w1 != w2:
+                subdomains.add(f"{w1}-{w2}.{domain}")
+
+    return list(subdomains)
 
 
 def main():
