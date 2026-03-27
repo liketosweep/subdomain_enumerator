@@ -4,6 +4,21 @@ import string
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
+import requests
+
+def probe_http(subdomain):
+    urls = [
+        f"https://{subdomain}",
+        f"http://{subdomain}"
+    ]
+    for url in urls:
+        try:
+            response = requests.get(url, timeout=3)
+            return (subdomain, url, response.status_code)
+        except requests.RequestException:
+            continue
+    return None
+
 
 def load_wordlist(path):
     try:
@@ -73,10 +88,15 @@ def main():
             result = future.result()
             if result:
                 subdomain, ip = result
-                if wildcard_ip and ip == wildcard_ip:
+            if wildcard_ip and ip == wildcard_ip:
+                continue
+            probe_result = probe_http(subdomain)
+            if probe_result:
+                sub, url, status = probe_result
+                if status not in [200, 301, 302, 403]:
                     continue
-                print(f"[+] {subdomain} -> {ip}")
-                resolved.append(f"{subdomain} -> {ip}")
+                print(f"[+] {sub} -> {url} [{status}]")
+                resolved.append(f"{sub} -> {url} [{status}]")
     os.makedirs(os.path.dirname(args.output), exist_ok=True)
     with open(args.output, "w") as f:
         for line in resolved:
