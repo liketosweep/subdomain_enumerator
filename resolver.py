@@ -1,13 +1,15 @@
 import socket
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import argparse
 
-
-def resolve_subdomain(subdomain):
-    try:
-        ip = socket.gethostbyname(subdomain)
-        return (subdomain, ip)
-    except socket.gaierror:
-        return None
+def resolve_subdomain(subdomain, retries=2):
+    for _ in range(retries):
+        try:
+            ip = socket.gethostbyname(subdomain)
+            return (subdomain, ip)
+        except socket.gaierror:
+            continue
+    return None
 
 
 def load_subdomains(path):
@@ -20,18 +22,18 @@ def load_subdomains(path):
 
 
 def main():
-    input_file = input("Enter subdomains file: ").strip()
-    output_file = input("Enter output file (default: resolved.txt): ").strip()
-    if not output_file:
-        output_file = "resolved.txt"
-    subdomains = load_subdomains(input_file)
+    parser = argparse.ArgumentParser(description="Subdomain Resolver")
+    parser.add_argument("-i", "--input", required=True, help="Input file (subdomains)")
+    parser.add_argument("-o", "--output", default="resolved.txt", help="Output file")
+    parser.add_argument("-t", "--threads", type=int, default=100, help="Number of threads")
+    args = parser.parse_args()
+    subdomains = load_subdomains(args.input)
     if not subdomains:
         print("[!] No subdomains loaded.")
         return
-    print(f"[+] Resolving {len(subdomains)} subdomains with threads...\n")
+    print(f"[+] Resolving {len(subdomains)} subdomains...\n")
     resolved = []
-    #  Thread pool
-    with ThreadPoolExecutor(max_workers=100) as executor:
+    with ThreadPoolExecutor(max_workers=args.threads) as executor:
         futures = {executor.submit(resolve_subdomain, sub): sub for sub in subdomains}
         for future in as_completed(futures):
             result = future.result()
@@ -39,12 +41,11 @@ def main():
                 subdomain, ip = result
                 print(f"[+] {subdomain} -> {ip}")
                 resolved.append(f"{subdomain} -> {ip}")
-    # Save results
-    with open(output_file, "w") as f:
+    with open(args.output, "w") as f:
         for line in resolved:
             f.write(line + "\n")
     print(f"\n[+] Resolved {len(resolved)} subdomains")
-    print(f"[+] Saved to {output_file}")
+    print(f"[+] Saved to {args.output}")
 
 
 if __name__ == "__main__":
