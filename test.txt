@@ -1,3 +1,0 @@
-google.com
-www.google.com
-api.github.com

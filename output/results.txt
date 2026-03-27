@@ -1,0 +1,7 @@
+ns2.google.com -> 216.239.34.10
+admin.google.com -> 142.251.223.142
+ns1.google.com -> 216.239.32.10
+blog.google.com -> 142.250.182.233
+api.google.com -> 172.217.27.164
+www.google.com -> 142.251.156.119
+mail.google.com -> 142.250.182.5

@@ -1,3 +1,0 @@
-www.google.com -> 142.251.154.119
-google.com -> 142.250.192.238
-api.github.com -> 20.207.73.85

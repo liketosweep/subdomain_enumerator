@@ -1,4 +1,9 @@
-admin
+www
 api
 dev
 test
+admin
+mail
+blog
+ns1
+ns2
