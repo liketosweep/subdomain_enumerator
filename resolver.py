@@ -30,7 +30,7 @@ def main():
         return
     print(f"[+] Resolving {len(subdomains)} subdomains with threads...\n")
     resolved = []
-    # 🔥 Thread pool
+    #  Thread pool
     with ThreadPoolExecutor(max_workers=100) as executor:
         futures = {executor.submit(resolve_subdomain, sub): sub for sub in subdomains}
         for future in as_completed(futures):
