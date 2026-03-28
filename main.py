@@ -5,6 +5,7 @@ import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 import requests
+import json
 
 def get_subdomains_crtsh(domain):   
     url = f"https://crt.sh/?q=%25.{domain}&output=json"
@@ -81,6 +82,9 @@ def main():
     parser.add_argument("-w", "--wordlist", required=True)
     parser.add_argument("-o", "--output", default="resolved.txt")
     parser.add_argument("-t", "--threads", type=int, default=100)
+    parser.add_argument("--passive", action="store_true")
+    parser.add_argument("--probe", action="store_true")
+    parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
     words = load_wordlist(args.wordlist)
     if not words:
@@ -88,8 +92,11 @@ def main():
     print("[+] Generating subdomains...\n")
     generated_subs = generate_subdomains(args.domain, words)
     print("[+] Fetching passive subdomains from crt.sh...\n")
-    crt_subs = get_subdomains_crtsh(args.domain)
-    print(f"[+] Found {len(crt_subs)} passive subdomains\n")
+    crt_subs = []
+    if args.passive:
+        print("[+] Fetching passive subdomains from crt.sh...\n")
+        crt_subs = get_subdomains_crtsh(args.domain)
+        print(f"[+] Found {len(crt_subs)} passive subdomains\n")
     subdomains = list(set(generated_subs + crt_subs))
     print(f"[+] Generated {len(subdomains)} subdomains\n")
     test_sub = generate_random_subdomain(args.domain)
@@ -108,21 +115,36 @@ def main():
             result = future.result()
             if result:
                 subdomain, ip = result
-            if wildcard_ip and ip == wildcard_ip:
-                continue
-            probe_result = probe_http(subdomain)
-            if probe_result:
-                sub, url, status = probe_result
-                if status not in [200, 301, 302, 403]:
+                if wildcard_ip and ip == wildcard_ip:
                     continue
-                print(f"[+] {sub} -> {url} [{status}]")
-                resolved.append(f"{sub} -> {url} [{status}]")
+                if args.probe:
+                    probe_result = probe_http(subdomain)
+                    if probe_result:
+                        sub, url, status = probe_result
+                        if status not in [200, 301, 302, 403]:
+                            continue
+                        print(f"[+] {sub} -> {url} [{status}]")
+                        resolved.append({
+                        "subdomain": sub,
+                        "url": url,
+                        "status": status
+                        })
+                else:
+                    print(f"[+] {subdomain} -> {ip}")
+                    resolved.append({
+                    "subdomain": subdomain,
+                    "ip": ip
+                    })
     os.makedirs(os.path.dirname(args.output), exist_ok=True)
     with open(args.output, "w") as f:
-        for line in resolved:
-            f.write(line + "\n")
-    print(f"\n[+] Resolved {len(resolved)} valid subdomains")
-    print(f"[+] Saved to {args.output}")
+        if args.json:
+            json.dump(resolved, f, indent=2)
+        else:
+            for entry in resolved:
+                if "url" in entry:
+                    f.write(f"{entry['subdomain']} -> {entry['url']} [{entry['status']}]\n")
+                else:
+                    f.write(f"{entry['subdomain']} -> {entry['ip']}\n")
 
 if __name__ == "__main__":
     main()

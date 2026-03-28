@@ -1,0 +1,17 @@
+[
+  {
+    "subdomain": "m.testexample.com",
+    "url": "http://m.testexample.com",
+    "status": 200
+  },
+  {
+    "subdomain": "www.example.com",
+    "url": "http://www.example.com",
+    "status": 200
+  },
+  {
+    "subdomain": "example.com",
+    "url": "http://example.com",
+    "status": 200
+  }
+]
