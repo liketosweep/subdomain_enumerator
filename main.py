@@ -91,7 +91,6 @@ def main():
         return
     print("[+] Generating subdomains...\n")
     generated_subs = generate_subdomains(args.domain, words)
-    print("[+] Fetching passive subdomains from crt.sh...\n")
     crt_subs = []
     if args.passive:
         print("[+] Fetching passive subdomains from crt.sh...\n")
