@@ -6,6 +6,22 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 import requests
 
+def get_subdomains_crtsh(domain):   
+    url = f"https://crt.sh/?q=%25.{domain}&output=json"
+    try:
+        response = requests.get(url, timeout=10)
+        data = response.json()
+    except:
+        return []
+    subdomains = set()
+    for entry in data:
+        name = entry.get("name_value", "")
+        for sub in name.split("\n"):
+            if domain in sub:
+                subdomains.add(sub.strip())
+    return list(subdomains)
+
+
 def probe_http(subdomain):
     urls = [
         f"https://{subdomain}",
@@ -70,7 +86,11 @@ def main():
     if not words:
         return
     print("[+] Generating subdomains...\n")
-    subdomains = generate_subdomains(args.domain, words)
+    generated_subs = generate_subdomains(args.domain, words)
+    print("[+] Fetching passive subdomains from crt.sh...\n")
+    crt_subs = get_subdomains_crtsh(args.domain)
+    print(f"[+] Found {len(crt_subs)} passive subdomains\n")
+    subdomains = list(set(generated_subs + crt_subs))
     print(f"[+] Generated {len(subdomains)} subdomains\n")
     test_sub = generate_random_subdomain(args.domain)
     wildcard_result = resolve_subdomain(test_sub)
