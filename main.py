@@ -7,6 +7,15 @@ import os
 import requests
 import json
 
+def is_valid_subdomain(subdomain):
+    labels = subdomain.split(".")
+    for label in labels:
+        if len(label) > 63:
+            return False
+    if len(subdomain) > 253:
+        return False
+    return True
+
 def get_subdomains_crtsh(domain):   
     url = f"https://crt.sh/?q=%25.{domain}&output=json"
     try:
@@ -109,7 +118,8 @@ def main():
     print("[+] Resolving...\n")
     resolved = []
     with ThreadPoolExecutor(max_workers=args.threads) as executor:
-        futures = {executor.submit(resolve_subdomain, sub): sub for sub in subdomains}
+        valid_subdomains = [sub for sub in subdomains if is_valid_subdomain(sub)]
+        futures = {executor.submit(resolve_subdomain, sub): sub for sub in valid_subdomains}
         for future in as_completed(futures):
             result = future.result()
             if result:
@@ -134,6 +144,7 @@ def main():
                     "subdomain": subdomain,
                     "ip": ip
                     })
+    resolved = sorted(resolved, key=lambda x: x["subdomain"])
     os.makedirs(os.path.dirname(args.output), exist_ok=True)
     with open(args.output, "w") as f:
         if args.json:
@@ -144,6 +155,7 @@ def main():
                     f.write(f"{entry['subdomain']} -> {entry['url']} [{entry['status']}]\n")
                 else:
                     f.write(f"{entry['subdomain']} -> {entry['ip']}\n")
+    print(f"\n[+] Final valid targets: {len(resolved)}")
 
 if __name__ == "__main__":
     main()
